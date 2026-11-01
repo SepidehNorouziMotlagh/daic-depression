@@ -1,148 +1,220 @@
 # Audio-Only Depression Detection on DAIC-WOZ
 
-Fine-tuning of **Wav2Vec 2.0** and **Whisper** for binary depression detection on
-the DAIC-WOZ dataset (AVEC 2017 distribution). This repository contains
-implementation code and aggregate experimental results only.
+An experimental study of **Wav2Vec 2.0** and **Whisper** for binary depression detection using audio from the **Distress Analysis Interview Corpus (DAIC-WOZ)**, distributed as part of the AVEC 2017 challenge.
 
-## Dataset Notice
+This repository contains the implementation, experimental configurations, aggregate evaluation results, and technical documentation. The DAIC-WOZ dataset and all dataset-derived files are excluded.
 
-This project uses the Distress Analysis Interview Corpus (DAIC-WOZ), provided
-by the University of Southern California Institute for Creative Technologies.
+## Dataset and Usage Notice
 
-The dataset is **not included in this repository**. Access must be obtained
-directly from the official providers, subject to their End-User License
-Agreement. Users are responsible for obtaining authorization before accessing
-or using the dataset.
+This project uses the Distress Analysis Interview Corpus (DAIC-WOZ), provided by the University of Southern California Institute for Creative Technologies (USC-ICT).
 
-This repository contains implementation code and research documentation only.
-It does not grant permission to access, redistribute, or commercially use
-DAIC-WOZ.
+The dataset is **not included in this repository**. Access must be requested directly from the official providers and is subject to their End-User License Agreement (EULA).
 
-If you reference or build on this work, cite both the corpus (LREC 2014) and the
-AVEC 2017 challenge (see *Citation* below).
+In particular:
 
-## What This Repository Contains
+- DAIC-WOZ is made available for **non-commercial research purposes only**.
+- The dataset, or any part of it, must not be redistributed.
+- Users must obtain their own authorization before accessing or using the data.
+- This repository does not grant access to the dataset or permission to redistribute or commercially use it.
 
-- `src/` — preprocessing pipeline: transcript-guided participant speech
-  extraction (removing interviewer turns, silence, and PII-scrubbed segments),
-  manifest construction, and download utility.
-- `training/` — nine fine-tuning scripts spanning full fine-tuning, partial
-  fine-tuning, frozen-feature probes, layer summation, time masking, and LoRA
-  adaptation across both required models.
-- `results/results_summary.json` — aggregate metrics for all nine runs.
-- `docs/` — technical report.
+This repository is intended to share implementation code and research findings, not the underlying dataset. Please review and comply with the dataset's licensing terms before reproducing the experiments.
 
-## What This Repository Does **Not** Contain
+## Project Overview
 
-- DAIC-WOZ audio, transcripts, feature files, or CSVs of any kind.
-- Dataset manifests or train/dev/test splits.
+The objective was to investigate whether pretrained speech representation models can support binary depression detection from participant speech.
+
+Two pretrained models were evaluated:
+
+- **Wav2Vec 2.0 Base**
+- **Whisper Small**
+
+Nine experimental configurations were implemented, covering full and partial fine-tuning, frozen-feature classification, layer aggregation, temporal augmentation, and LoRA adaptation.
+
+The experiments use the official AVEC 2017 train, development, and test partitions. The prediction target is binary depression status based on the PHQ-8 threshold.
+
+## Repository Contents
+
+| Directory / File | Description |
+|---|---|
+| `src/` | Audio preprocessing, participant-speech extraction, manifest construction, and download utilities |
+| `training/` | Nine training scripts covering the experimental configurations |
+| `results/results_summary.json` | Aggregate evaluation metrics for all nine runs |
+| `docs/` | Technical report and project documentation |
+| `requirements.txt` | Python dependencies |
+| `.env.example` | Example environment configuration |
+
+The training scripts document their individual model configurations and hyperparameters.
+
+## What Is Not Included
+
+To respect the DAIC-WOZ EULA, this repository does not contain:
+
+- DAIC-WOZ audio recordings.
+- Transcripts or interview text.
+- Original dataset CSV files or split manifests.
+- Extracted audio features or cached representations.
 - Model checkpoints or trained weights.
-- Per-participant predictions or evaluation outputs.
+- Participant-level predictions or evaluation outputs.
 
-## Results at a Glance
+Only implementation code, documentation, and aggregate experimental results are included.
 
-All numbers on the **official AVEC 2017 test split** (47 subjects: 14 depressed,
-33 non-depressed, verified against `full_test_split.csv`).
+## Experimental Results
+
+The following table summarizes performance on the official AVEC 2017 test partition, comprising **47 participants: 14 with depression labels and 33 without depression labels**.
 
 | Run | Model | Configuration | Test AUC | Test F1 |
-|---|---|---|---|---|
-| 1 | Wav2Vec2-base | Full FT + attention pooling + class weights | 0.543 | **0.320** |
-| 2 | Wav2Vec2-base | Top-4 unfreeze + mean pool + dev-threshold tuning | 0.483 | 0.256 |
-| 3 | Wav2Vec2-base | Frozen features + aggregated linear probe | 0.526 | **0.400** |
-| **4** | **Wav2Vec2-base** | **Frozen encoder + small MLP head** | **0.578** | 0.000 |
-| 5 | Wav2Vec2-base | 7 s non-overlap + layer summation + time masking | 0.509 | 0.000 |
-| 6 | Wav2Vec2-base | LoRA (r=8) on attention Q, V | 0.517 | 0.000 |
-| 7 | Whisper-small | Frozen feature probe | 0.483 | 0.000 |
-| 8 | Whisper-small | Partial FT (last 4 encoder layers) | 0.472 | 0.000 |
-| **9** | **Whisper-small** | **LoRA (r=8) on attention Q, V** | **0.541** | 0.000 |
+|---|---|---|---:|---:|
+| 1 | Wav2Vec 2.0 Base | Full fine-tuning + attention pooling + class weights | 0.543 | 0.320 |
+| 2 | Wav2Vec 2.0 Base | Top-4 layer unfreezing + mean pooling + development-set threshold tuning | 0.483 | 0.256 |
+| 3 | Wav2Vec 2.0 Base | Frozen features + aggregated linear probe | 0.526 | **0.400** |
+| **4** | **Wav2Vec 2.0 Base** | **Frozen encoder + lightweight MLP classification head** | **0.578** | 0.000 |
+| 5 | Wav2Vec 2.0 Base | 7-second windows + layer summation + time masking | 0.509 | 0.000 |
+| 6 | Wav2Vec 2.0 Base | LoRA (r=8) on attention query and value projections | 0.517 | 0.000 |
+| 7 | Whisper Small | Frozen-feature classification probe | 0.483 | 0.000 |
+| 8 | Whisper Small | Partial fine-tuning of the last four encoder layers | 0.472 | 0.000 |
+| **9** | **Whisper Small** | **LoRA (r=8) on attention query and value projections** | **0.541** | 0.000 |
 
-**Best Wav2Vec2 AUC:** 0.578 (run 4, frozen encoder).
-**Best Wav2Vec2 F1:** 0.400 (run 3, aggregated probe).
-**Best Whisper AUC:** 0.541 (run 9, LoRA).
+**Best results by model and metric:**
 
-Runs 4–9 report F1 = 0.000 at threshold 0.5 with the identical confusion matrix
-`[[33, 0], [14, 0]]` — every subject predicted "not depressed." This is not a
-broken implementation; it is the class-prior miscalibration signature of a
-weakly-informative classifier trained on 28%-positive data. Runs 1–3 produce
-nonzero F1 by explicitly pushing prediction probabilities upward (class
-weighting in runs 1 and 3; dev-threshold tuning in run 2), at the cost of
-lower AUC. **AUC is the primary metric for this class distribution.**
+- **Best overall test AUC:** 0.578 — Wav2Vec 2.0, frozen encoder (Run 4).
+- **Best overall test F1:** 0.400 — Wav2Vec 2.0, aggregated linear probe (Run 3).
+- **Best Whisper test AUC:** 0.541 — Whisper LoRA (Run 9).
 
-## Preprocessing Overview
+### Interpreting the Results
 
-Raw DAIC-WOZ audio is approximately 90% interviewer speech, silence, and
-PII-redacted spans. The preprocessing pipeline (`src/preprocess.py`) extracts
-only participant speech using the transcript's ground-truth speaker and
-timestamp columns:
+Runs 4–9 produced an F1 score of 0.000 at the default classification threshold of 0.5. All six runs produced the same test confusion matrix:
 
-1. Parse `{pid}_TRANSCRIPT.csv` (tab-separated).
-2. Remove rows whose `value` contains `scrubbed_entry` (PII-redaction markers
-   that correspond to silent waveform spans).
-3. Retain only participant turns (drop rows where `speaker` contains "Ellie").
-4. Discard segments shorter than 1.0 s (backchannels, breath noises).
-5. Slice audio by transcript timestamps with ±50 ms pad on each end; discard
-   chunks whose sample-energy indicates near-total silence.
-6. Concatenate the retained chunks into a single 16 kHz mono WAV per
-   participant.
+`[[33, 0], [14, 0]]`
 
-Result: ~2.6 GB of cleaned audio across 188 usable participants, with
-2–10 minutes of participant speech per subject.
+In other words, these configurations classified every test participant as not depressed.
 
-## Experimental Design
+Runs 1–3 produced nonzero F1 scores under different training or threshold configurations. However, their results also illustrate the difficulty of obtaining useful classification performance from this relatively small, imbalanced, subject-level dataset.
 
-- **Splits:** official AVEC 2017 train / dev / test, no re-splitting.
-- **Windowing:** 10 s windows, 5 s stride (run 5 uses 7 s / 7 s).
-- **Batch:** 2 physical × 8 accumulation = 16 effective.
-- **Optimizer:** AdamW with weight decay 0.01.
-- **Schedule:** cosine with 10% linear warmup.
-- **Precision:** AMP (fp16) on a Tesla T4 (Colab free tier).
-- **Reproducibility:** single seed (`torch.manual_seed(42)`); note that runs are
-  not bit-exact across machines due to CUDA nondeterminism.
+The highest observed AUC was 0.578, indicating only weak ranking performance on the test set. The results should therefore be interpreted as exploratory experimental findings, not evidence of clinically useful depression detection.
 
-Individual configurations and hyperparameters are documented in each script's
-module docstring.
+AUC provides a threshold-independent view of ranking performance, while F1 reflects performance at a particular classification threshold. Both are reported because they capture different aspects of model behavior.
 
-## Reproducing
+## Audio Preprocessing
 
-You must obtain DAIC-WOZ yourself; it is not included here.
+The preprocessing pipeline extracts participant speech from the original interview recordings using the accompanying transcript timestamps and speaker annotations.
 
-1. Request access from USC-ICT (see link in the dataset provider's website)
-   and sign the EULA.
-2. Copy `.env.example` to `.env` and fill in `USC_BASE_URL` with the base
-   download URL from your approval email.
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   pip install peft        # only needed for runs 6 and 9
-Run the preprocessing pipeline (streaming, low disk):
+The pipeline is implemented in `src/preprocess.py` and performs the following operations:
 
-bash
+1. Parses the participant transcript file.
+2. Removes transcript entries marked as `scrubbed_entry`, corresponding to redacted portions.
+3. Retains participant speech and excludes interviewer turns.
+4. Discards segments shorter than 1.0 second.
+5. Extracts audio segments using transcript timestamps, with a 50 ms padding interval on each side.
+6. Filters segments with near-zero audio energy.
+7. Concatenates the retained segments into a single 16 kHz mono audio file per participant.
+
+The resulting processed collection contained approximately **2.6 GB of audio across 188 usable participants**, with approximately 2–10 minutes of retained participant speech per subject.
+
+The preprocessing pipeline operates on the authorized local dataset files. Those files are not included in this repository.
+
+## Experimental Setup
+
+| Component | Configuration |
+|---|---|
+| Dataset partitions | Official AVEC 2017 train, development, and test splits |
+| Target | Binary depression classification |
+| Wav2Vec 2.0 model | Base |
+| Whisper model | Small |
+| Standard windowing | 10-second windows with a 5-second stride |
+| Run 5 windowing | 7-second non-overlapping windows |
+| Physical batch size | 2 |
+| Gradient accumulation | 8 steps |
+| Effective batch size | 16 |
+| Optimizer | AdamW |
+| Weight decay | 0.01 |
+| Learning-rate schedule | Cosine decay with 10% linear warmup |
+| Precision | Automatic mixed precision (FP16) |
+| Hardware | NVIDIA Tesla T4 GPU |
+| Random seed | 42 |
+
+Experiments were conducted using Google Colab's free-tier GPU environment.
+
+Training scripts save model, optimizer, and scheduler states to support recovery after interrupted sessions. Runs use a fixed random seed, but exact bit-for-bit reproducibility is not guaranteed across different hardware and CUDA environments.
+
+## Reproducing the Experiments
+
+### 1. Obtain dataset access
+
+Request access to DAIC-WOZ through the official provider:
+
+[DAIC-WOZ — USC Institute for Creative Technologies](https://dcapswoz.ict.usc.edu/)
+
+You must obtain authorization and sign the applicable EULA before downloading or using the dataset.
+
+### 2. Configure the environment
+
+Clone the repository and create a local environment configuration:
+
+```bash
+git clone <repository-url>
+cd <repository-directory>
+
+cp .env.example .env
+```
+
+Configure the required environment variables in `.env`, including the authorized download URL if you intend to use the download utility.
+
+**Do not commit `.env` or any credentials, access tokens, or private download URLs.**
+
+### 3. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+For the LoRA experiments (Runs 6 and 9), install PEFT:
+
+```bash
+pip install peft
+```
+
+### 4. Prepare the audio
+
+After obtaining the dataset and configuring the required local paths, run:
+
+```bash
 python src/pipeline.py
-Adapt and run any training script in training/; each reads
-DAIC_AUDIO_DIR, DAIC_CKPT_DIR, and DAIC_RESULTS_DIR from the
-environment (see training/README.md).
+```
 
-Reproducibility Notes
-The test split contains 14 positive subjects (PIDs 308, 309, 311, 332,
-337, 354, 359, 365, 384, 405, 410, 421, 453, 461) and 33 negative. Some
-AVEC 2017 companion documentation cites a count of 15; this appears to
-reflect a different labeling or a pre-release count and does not match the
-distributed full_test_split.csv. The released file is authoritative.
+The preprocessing pipeline prepares the participant audio for the training scripts.
 
-Session 440 was downloadable but returned a corrupt archive
-(File is not a zip file after matching Content-Length). Session 440 is
-in the dev split; test evaluation is unaffected.
+### 5. Run an experiment
 
-Training was run on the Colab free tier (T4 GPU). Session disconnects were
-handled by saving optimizer + scheduler + model state to Google Drive after
-every epoch and auto-resuming from the last completed epoch.
+Configure the local data, checkpoint, and results directories using the environment variables:
 
-Citation
-If you build on this work, cite both the corpus and the AVEC 2017 challenge:
+- `DAIC_AUDIO_DIR`
+- `DAIC_CKPT_DIR`
+- `DAIC_RESULTS_DIR`
 
-bibtex
+Then execute the desired training script from `training/`.
+
+See `training/README.md` and the individual script documentation for experiment-specific instructions.
+
+## Reproducibility Notes and Limitations
+
+- The official test partition contains 47 participants: 14 positive and 33 negative according to the released evaluation labels.
+- One development participant session (Session 440) could not be processed because its downloaded archive was corrupt. It was therefore excluded from the usable development data. The official test partition was unaffected.
+- Training was performed on a Tesla T4 GPU through Google Colab.
+- Checkpoints were saved between epochs to support recovery from session interruptions.
+- The experiments use a relatively small subject-level dataset. Results may be sensitive to participant variability, model configuration, windowing, pooling strategy, and classification threshold.
+- The experiments do not establish clinical validity or generalization to other datasets and populations.
+
+The accompanying technical report provides additional details about the experimental configurations, implementation decisions, observed results, and limitations.
+
+## Citation
+
+If you publish research using DAIC-WOZ, acknowledge the corpus using the following citation:
+
+**DAIC-WOZ**
+
+```bibtex
 @inproceedings{gratch2014distress,
-  title     = {The Distress Analysis Interview Corpus of human and computer interviews},
+  title     = {The Distress Analysis Interview Corpus of Human and Computer Interviews},
   author    = {Gratch, Jonathan and Artstein, Ron and Lucas, Gale and Stratou, Giota
                and Scherer, Stefan and Nazarian, Angela and Wood, Rachel
                and Boberg, Jill and DeVault, David and Marsella, Stacy
@@ -150,14 +222,23 @@ bibtex
   booktitle = {Proceedings of the Language Resources and Evaluation Conference (LREC)},
   year      = {2014}
 }
+```
 
+For work specifically related to the AVEC 2017 challenge, also cite:
+
+**AVEC 2017**
+
+```bibtex
 @inproceedings{ringeval2017avec,
   title     = {AVEC 2017: Real-life Depression, and Affect Recognition Workshop and Challenge},
-  author    = {Ringeval, Fabien and Schuller, Bj{\"o}rn and Valstar, Michel and others},
+  author    = {Ringeval, Fabien and Schuller, Björn and Valstar, Michel and others},
   booktitle = {Proceedings of the 7th Annual Workshop on Audio/Visual Emotion Challenge},
   year      = {2017}
 }
-License
-Code in this repository is provided for academic reference only. It does not
-grant any rights to the DAIC-WOZ dataset, which remains subject to its own
-End-User License Agreement.
+```
+
+## Code and Dataset Terms
+
+The code in this repository is shared for research and educational reference. The DAIC-WOZ dataset is governed independently by its provider's EULA.
+
+Nothing in this repository grants rights to access, redistribute, or commercially use DAIC-WOZ. Users are responsible for obtaining their own dataset authorization and complying with the applicable terms.
