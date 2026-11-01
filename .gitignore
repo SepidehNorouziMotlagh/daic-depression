@@ -1,0 +1,138 @@
+# ============================================================
+# DAIC-WOZ Depression Detection — .gitignore
+# Restricts the repository to code + documentation only.
+# No dataset content, no trained weights, no credentials.
+# ============================================================
+
+# -------------------- Restricted dataset content --------------------
+# DAIC-WOZ is EULA-restricted. Never commit audio, transcripts,
+# manifests, splits, or any dataset-derived artifact.
+
+data/
+!data/.gitkeep
+
+# Explicitly ban file types even outside data/ in case of stray copies
+*.wav
+*.mp3
+*.flac
+*.m4a
+*.ogg
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# CSV blanket — blocks daic_manifest.csv, *_split_*.csv,
+# and any other dataset-derived CSV. Re-include results/*.json below.
+*.csv
+
+# Model checkpoints and weights
+*.pt
+*.pth
+*.safetensors
+*.bin
+*.ckpt
+*.h5
+*.onnx
+
+# Checkpoint directories
+checkpoints/
+ckpts/
+ckpts_*/
+ckpts*/
+
+# -------------------- Logs --------------------
+logs/
+*.log
+
+# -------------------- Secrets / credentials --------------------
+.env
+.env.local
+.env.*.local
+
+# -------------------- Python --------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# pytest / mypy / ruff caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# -------------------- Virtual environments --------------------
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+*.venv
+
+# -------------------- Jupyter / Colab --------------------
+.ipynb_checkpoints/
+*.ipynb
+!docs/*.ipynb
+
+# -------------------- IDE --------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# -------------------- OS --------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# -------------------- Whitelist exceptions --------------------
+# Keep intentionally-tracked directories even though their contents
+# are broadly banned above.
+
+!results/
+!results/results_summary.json
+
+# Keep the report and any doc assets
+!docs/
+!docs/*.pdf
+!docs/*.md
+
+# Keep preprocessing/status scripts even though logs/ is banned
+!src/
+!src/*.py
+
+# Keep training scripts
+!training/
+!training/*.py
+!training/*.md
